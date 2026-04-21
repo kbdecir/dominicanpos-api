@@ -1,0 +1,14 @@
+name: DominicanPOS Local
+values:
+  - key: base_url
+    enabled: true
+    value: 'http://127.0.0.1:8000'
+  - key: token
+    enabled: true
+    value: ''
+  - key: company_id
+    enabled: true
+    value: ''
+  - key: branch_id
+    enabled: true
+    value: ''

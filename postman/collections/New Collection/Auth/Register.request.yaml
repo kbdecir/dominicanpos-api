@@ -1,0 +1,549 @@
+$kind: http-request
+name: Register
+url: |-
+  {{base_url}}/api/v1/auth/register
+  Paso 4
+
+  Ve a la pestaña Headers y agrega:
+
+  Key	Value
+  Accept	application/json
+  Content-Type	application/json
+  Paso 5
+
+  Ve a Body → selecciona raw → cambia a JSON
+
+  Pega esto:
+
+  {
+    "first_name": "Admin",
+    "last_name": "System",
+    "email": "admin@test.com",
+    "password": "12345678",
+    "password_confirmation": "12345678",
+    "company_name": "Empresa Demo"
+  }
+  Paso 6
+
+  Haz clic en Save
+
+  6. Crear request de Login
+  Paso 1
+
+  Dentro de Auth, crea otro request.
+
+  Nombre:
+
+  Login
+  Paso 2
+
+  Método:
+
+  POST
+  Paso 3
+
+  URL:
+
+  {{base_url}}/api/v1/auth/login
+  Paso 4
+
+  Headers:
+
+  Key	Value
+  Accept	application/json
+  Content-Type	application/json
+  Paso 5
+
+  Body → raw → JSON
+
+  {
+    "email": "admin@test.com",
+    "password": "12345678"
+  }
+  Paso 6
+
+  Ahora viene lo importante: guardar el token automáticamente.
+
+  Ve a la pestaña Tests de ese request y pega esto:
+
+  const response = pm.response.json();
+
+  if (response.data && response.data.token) {
+      pm.environment.set("token", response.data.token);
+  }
+  Paso 7
+
+  Guarda el request.
+
+  7. Probar Register y Login
+  Primero ejecuta Register
+
+  Haz clic en Send
+
+  Si responde bien, perfecto.
+
+  Luego ejecuta Login
+
+  Haz clic en Send
+
+  Si responde bien, el token se guardará solo.
+
+  Cómo verificar que el token se guardó
+
+  Arriba a la derecha abre el environment DominicanPOS Local y revisa la variable:
+
+  token
+
+  Debe tener un valor parecido a:
+
+  1|abc123xyz...
+  8. Crear request de Create Company
+  Paso 1
+
+  Dentro de Companies, crea un request nuevo.
+
+  Nombre:
+
+  Create Company
+  Paso 2
+
+  Método:
+
+  POST
+  Paso 3
+
+  URL:
+
+  {{base_url}}/api/v1/companies
+  Paso 4
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+  Content-Type	application/json
+  Paso 5
+
+  Body → raw → JSON
+
+  {
+    "name": "Empresa Demo",
+    "business_name": "Empresa Demo SRL",
+    "rnc": "132456789",
+    "email": "info@empresademo.com",
+    "phone": "8095551111",
+    "address": "Santo Domingo"
+  }
+  Paso 6
+
+  En la pestaña Tests, pega esto para guardar company_id automáticamente:
+
+  const response = pm.response.json();
+
+  if (response.data && response.data.id) {
+      pm.environment.set("company_id", response.data.id);
+  }
+  Paso 7
+
+  Guarda el request.
+
+  9. Crear request de List Companies
+
+  Dentro de Companies, crea otro request.
+
+  Nombre:
+
+  List Companies
+
+  Método:
+
+  GET
+
+  URL:
+
+  {{base_url}}/api/v1/companies
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  10. Crear request de Get Company by ID
+
+  Nombre:
+
+  Get Company
+
+  Método:
+
+  GET
+
+  URL:
+
+  {{base_url}}/api/v1/companies/{{company_id}}
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  11. Crear request de Update Company
+
+  Nombre:
+
+  Update Company
+
+  Método:
+
+  PUT
+
+  URL:
+
+  {{base_url}}/api/v1/companies/{{company_id}}
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+  Content-Type	application/json
+
+  Body:
+
+  {
+    "name": "Empresa Demo Actualizada",
+    "phone": "8095552222"
+  }
+
+  Guarda.
+
+  12. Crear request de Deactivate Company
+
+  Nombre:
+
+  Deactivate Company
+
+  Método:
+
+  PATCH
+
+  URL:
+
+  {{base_url}}/api/v1/companies/{{company_id}}/deactivate
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  13. Crear request de Activate Company
+
+  Nombre:
+
+  Activate Company
+
+  Método:
+
+  PATCH
+
+  URL:
+
+  {{base_url}}/api/v1/companies/{{company_id}}/activate
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  14. Crear request de Create Branch
+
+  Dentro de Branches, crea request nuevo.
+
+  Nombre:
+
+  Create Branch
+
+  Método:
+
+  POST
+
+  URL:
+
+  {{base_url}}/api/v1/branches
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+  Content-Type	application/json
+
+  Body:
+
+  {
+    "company_id": {{company_id}},
+    "name": "Sucursal Naco",
+    "code": "NACO-01",
+    "email": "naco@empresademo.com",
+    "phone": "8095553333",
+    "address": "Av. Tiradentes",
+    "city": "Santo Domingo",
+    "sector": "Naco",
+    "is_main": true
+  }
+  Importante
+
+  Si Postman te da error por {{company_id}} sin comillas, usa esto:
+
+  {
+    "company_id": "{{company_id}}",
+    "name": "Sucursal Naco",
+    "code": "NACO-01",
+    "email": "naco@empresademo.com",
+    "phone": "8095553333",
+    "address": "Av. Tiradentes",
+    "city": "Santo Domingo",
+    "sector": "Naco",
+    "is_main": true
+  }
+  Tests
+
+  Pega esto para guardar branch_id:
+
+  const response = pm.response.json();
+
+  if (response.data && response.data.id) {
+      pm.environment.set("branch_id", response.data.id);
+  }
+
+  Guarda.
+
+  15. Crear request de List Branches by Company
+
+  Nombre:
+
+  List Branches by Company
+
+  Método:
+
+  GET
+
+  URL:
+
+  {{base_url}}/api/v1/companies/{{company_id}}/branches
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  16. Crear request de Get Branch
+
+  Nombre:
+
+  Get Branch
+
+  Método:
+
+  GET
+
+  URL:
+
+  {{base_url}}/api/v1/branches/{{branch_id}}
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  17. Crear request de Update Branch
+
+  Nombre:
+
+  Update Branch
+
+  Método:
+
+  PUT
+
+  URL:
+
+  {{base_url}}/api/v1/branches/{{branch_id}}
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+  Content-Type	application/json
+
+  Body:
+
+  {
+    "name": "Sucursal Naco Centro",
+    "phone": "8095554444",
+    "is_main": true
+  }
+
+  Guarda.
+
+  18. Crear request de Deactivate Branch
+
+  Nombre:
+
+  Deactivate Branch
+
+  Método:
+
+  PATCH
+
+  URL:
+
+  {{base_url}}/api/v1/branches/{{branch_id}}/deactivate
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  19. Crear request de Activate Branch
+
+  Nombre:
+
+  Activate Branch
+
+  Método:
+
+  PATCH
+
+  URL:
+
+  {{base_url}}/api/v1/branches/{{branch_id}}/activate
+
+  Headers:
+
+  Key	Value
+  Authorization	Bearer {{token}}
+  Accept	application/json
+
+  Guarda.
+
+  20. Orden correcto para probar toda la colección
+
+  Ejecuta en este orden:
+
+  Auth
+  Register
+  Login
+  Companies
+  Create Company
+  List Companies
+  Get Company
+  Update Company
+  Branches
+  Create Branch
+  List Branches by Company
+  Get Branch
+  Update Branch
+  Deactivate Branch
+  Activate Branch
+  Reglas de negocio
+  Deactivate Company
+  Create Branch otra vez en empresa inactiva
+
+  Ese último debe fallar con:
+
+  {
+    "success": false,
+    "message": "No se pueden crear sucursales en una empresa inactiva."
+  }
+  21. Cómo saber si todo está bien configurado
+  Debe pasar esto:
+  login guarda el token
+  create company guarda company_id
+  create branch guarda branch_id
+  los requests protegidos funcionan sin pegar manualmente IDs o tokens
+  22. Error típico que debes evitar
+  Error 401
+
+  Suele ser porque:
+
+  no ejecutaste login
+  el token no se guardó
+  no seleccionaste el environment correcto
+  Error con {{company_id}}
+
+  Suele ser porque:
+
+  no ejecutaste Create Company
+  el test script no guardó el ID
+  23. Mi recomendación práctica
+
+  No intentes construir los 14 requests de una vez.
+
+  Hazlo así:
+
+  Primera tanda
+  Environment
+  Register
+  Login
+  Create Company
+
+  Cuando eso te funcione, sigue con:
+
+  List Companies
+  Get Company
+  Create Branch
+
+  Si quieres, lo hacemos guiado juntos. Empieza ahora solo con estos 4:
+
+  crear environment
+  Register
+  Login
+  Create Company
+
+  Y me vas diciendo en cuál pantalla te trabas.
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: "{\r
+
+    \  \"first_name\": \"Admin\",\r
+
+    \  \"last_name\": \"System\",\r
+
+    \  \"email\": \"admin@sgac.com\",\r
+
+    \  \"password\": \"12345678\",\r
+
+    \  \"password_confirmation\": \"12345678\",\r
+
+    \  \"company_name\": \"Empresa Demo\"\r
+
+    }"
+order: 1776707355521
