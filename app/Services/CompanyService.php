@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Models\UserCompanyRole;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -12,9 +13,14 @@ class CompanyService
 {
     public function listForUser(User $user): Collection
     {
-        return $user->companies()
-            ->wherePivot('is_active', true)
-            ->orderBy('name')
+        return Company::query()
+            ->whereIn('company_id', function ($query) use ($user) {
+                $query->select('company_id')
+                    ->from('user_company_roles')
+                    ->where('user_id', $user->user_id)
+                    ->where('status', 'ACTIVE');
+            })
+            ->orderBy('trade_name')
             ->get();
     }
 
@@ -23,14 +29,8 @@ class CompanyService
         return DB::transaction(function () use ($data, $user) {
             $company = Company::create([
                 ...$data,
-                'is_active' => true,
-                'created_by' => $user->id,
-                'updated_by' => $user->id,
-            ]);
-
-            $company->users()->attach($user->id, [
-                'role' => 'owner',
-                'is_active' => true,
+                'status' => 'ACTIVE',
+                'created_by_user_id' => $user->user_id,
             ]);
 
             return $company->fresh();
@@ -40,15 +40,18 @@ class CompanyService
     public function findForUser(int $companyId, User $user): Company
     {
         $company = Company::query()
-            ->where('id', $companyId)
-            ->whereHas('users', function ($query) use ($user) {
-                $query->where('users.id', $user->id)
-                    ->where('company_user.is_active', true);
+            ->where('company_id', $companyId)
+            ->whereExists(function ($query) use ($user) {
+                $query->select(DB::raw(1))
+                    ->from('user_company_roles')
+                    ->whereColumn('user_company_roles.company_id', 'companies.company_id')
+                    ->where('user_company_roles.user_id', $user->user_id)
+                    ->where('user_company_roles.status', 'ACTIVE');
             })
             ->with('branches')
             ->first();
 
-        if (!$company) {
+        if (! $company) {
             throw new NotFoundHttpException('Empresa no encontrada o sin acceso.');
         }
 
@@ -59,7 +62,6 @@ class CompanyService
     {
         $company->update([
             ...$data,
-            'updated_by' => $user->id,
         ]);
 
         return $company->fresh();
@@ -68,8 +70,7 @@ class CompanyService
     public function toggleStatus(Company $company, bool $status, User $user): Company
     {
         $company->update([
-            'is_active' => $status,
-            'updated_by' => $user->id,
+            'status' => $status ? 'ACTIVE' : 'INACTIVE',
         ]);
 
         return $company->fresh();

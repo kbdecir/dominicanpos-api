@@ -2,57 +2,45 @@
 
 namespace App\Models;
 
+use App\Models\UserInvitation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 class Company extends Model
 {
     use HasFactory;
 
+    protected $table = 'companies';
+    protected $primaryKey = 'company_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
-        'uuid',
-        'name',
-        'business_name',
+        'legal_name',
+        'trade_name',
         'rnc',
         'email',
         'phone',
-        'address',
-        'logo_path',
-        'is_active',
-        'created_by',
-        'updated_by',
+        'status',
+        'created_by_user_id',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-
-    protected static function booted(): void
-    {
-        static::creating(function (Company $company) {
-            if (empty($company->uuid)) {
-                $company->uuid = (string) Str::uuid();
-            }
-        });
-    }
+    public $timestamps = true;
 
     public function branches(): HasMany
     {
-        return $this->hasMany(Branch::class);
+        return $this->hasMany(Branch::class, 'company_id', 'company_id');
     }
 
-    public function users(): BelongsToMany
+    public function userCompanyRoles(): HasMany
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot(['role', 'is_active'])
-            ->withTimestamps();
+        return $this->hasMany(UserCompanyRole::class, 'company_id', 'company_id');
     }
 
-    public function scopeActive($query)
+    public function invitations()
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(UserInvitation::class, 'company_id', 'company_id');
     }
+
 }

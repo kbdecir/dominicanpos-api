@@ -54,29 +54,29 @@ class AuthController extends Controller
     }
 
     public function login(LoginRequest $request): JsonResponse
-    {
-        $data = $request->validated();
+{
+    $data = $request->validated();
 
-        $user = User::where('email', $data['email'])->first();
+    $user = User::where('email', $data['email'])->first();
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Credenciales inválidas',
-            ], 401);
-        }
-
-        $token = $user->createToken('api_token')->plainTextToken;
-
+    if (! $user || ! Hash::check($data['password'], $user->password_hash)) {
         return response()->json([
-            'success' => true,
-            'message' => 'Login correcto',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-            ],
-        ]);
+            'success' => false,
+            'message' => 'Credenciales inválidas',
+        ], 401);
     }
+
+    $token = $user->createToken('api_token')->plainTextToken;
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Login correcto',
+        'data' => [
+            'user' => $user,
+            'token' => $token,
+        ],
+    ]);
+}
 
     public function logout(Request $request): JsonResponse
     {

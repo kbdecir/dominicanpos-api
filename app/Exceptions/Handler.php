@@ -30,9 +30,12 @@ class Handler extends ExceptionHandler
         // fallback general
         $this->renderable(function (Throwable $e, $request) {
             return response()->json([
-                'success' => false,
-                'message' => 'Error interno del servidor',
-            ], 500);
+    'success' => false,
+    'message' => $e->getMessage(),
+    'exception' => get_class($e),
+    'file' => $e->getFile(),
+    'line' => $e->getLine(),
+], 500);
         });
     }
 }

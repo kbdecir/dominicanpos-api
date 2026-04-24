@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -11,29 +12,32 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $table = 'users';
+    protected $primaryKey = 'user_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
-        'password',
+        'password_hash',
+        'phone',
+        'status',
     ];
 
     protected $hidden = [
-        'password',
+        'password_hash',
         'remember_token',
     ];
 
-    protected function casts(): array
+    public function companyRoles(): HasMany
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(UserCompanyRole::class, 'user_id', 'user_id');
     }
 
-    public function companies()
+    public function activeCompanyRoles(): HasMany
     {
-        return $this->belongsToMany(Company::class)
-            ->withPivot(['role', 'is_active'])
-            ->withTimestamps();
+        return $this->companyRoles()->where('status', 'ACTIVE');
     }
 }

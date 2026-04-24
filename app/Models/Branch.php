@@ -5,49 +5,38 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
     use HasFactory;
 
+    protected $table = 'branches';
+    protected $primaryKey = 'branch_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
-        'uuid',
         'company_id',
-        'name',
         'code',
-        'email',
+        'name',
         'phone',
-        'address',
+        'email',
+        'address_line_1',
+        'address_line_2',
         'city',
-        'sector',
-        'is_main',
-        'is_active',
-        'created_by',
-        'updated_by',
+        'province',
+        'is_main_branch',
+        'status',
     ];
-
-    protected $casts = [
-        'is_main' => 'boolean',
-        'is_active' => 'boolean',
-    ];
-
-    protected static function booted(): void
-    {
-        static::creating(function (Branch $branch) {
-            if (empty($branch->uuid)) {
-                $branch->uuid = (string) Str::uuid();
-            }
-        });
-    }
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id', 'company_id');
     }
 
-    public function scopeActive($query)
+    public function userCompanyRoles(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(UserCompanyRole::class, 'branch_id', 'branch_id');
     }
 }
