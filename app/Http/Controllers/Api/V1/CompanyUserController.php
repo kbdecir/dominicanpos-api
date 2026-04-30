@@ -76,16 +76,20 @@ class CompanyUserController extends Controller
         ]);
     }
 
-    public function invite(
+public function invite(
     CompanyUserInviteRequest $request,
     int $companyId
 ): JsonResponse {
+    $invitation = $this->invitationService->create(
+        $companyId,
+        $request->validated(),
+        $request->user()
+    );
+
     return response()->json([
-        'ok' => true,
-        'company_id' => $companyId,
-        'payload' => $request->validated(),
-        'user_id' => $request->user()?->user_id,
-    ]);
+        'message' => 'Invitación creada correctamente.',
+        'data' => $invitation,
+    ], 201);
 }
 
 }

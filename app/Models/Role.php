@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class Role extends Model
 {
     use HasFactory;
@@ -27,6 +29,10 @@ class Role extends Model
         'created_by_user_id',
     ];
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'company_id', 'company_id');
+    }
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(

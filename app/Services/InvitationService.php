@@ -6,6 +6,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\UserInvitation;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -99,4 +101,95 @@ class InvitationService
             throw new NotFoundHttpException('No tienes acceso activo a esta empresa.');
         }
     }
+
+    public function accept(string $token, array $data): array
+    {
+        $invitation = $this->findByToken($token);
+
+        return DB::transaction(function () use ($invitation, $data) {
+            $user = User::query()
+                ->where('email', $invitation->email)
+                ->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'email' => $invitation->email,
+                    'password_hash' => Hash::make($data['password']),
+                    'phone' => $data['phone'] ?? null,
+                    'status' => 'ACTIVE',
+                ]);
+            }
+
+            $existingAccess = \App\Models\UserCompanyRole::query()
+                ->where('user_id', $user->user_id)
+                ->where('company_id', $invitation->company_id)
+                ->first();
+
+            if ($existingAccess) {
+                throw new ConflictHttpException('El usuario ya tiene acceso a esta empresa.');
+            }
+
+            $access = \App\Models\UserCompanyRole::create([
+                'user_id' => $user->user_id,
+                'company_id' => $invitation->company_id,
+                'branch_id' => $invitation->branch_id,
+                'role_id' => $invitation->role_id,
+                'assigned_by_user_id' => $invitation->invited_by_user_id,
+                'is_default_company' => false,
+                'status' => 'ACTIVE',
+                'assigned_at' => now(),
+            ]);
+
+            $invitation->update([
+                'status' => 'ACCEPTED',
+                'accepted_at' => now(),
+            ]);
+
+            return [
+                'user' => $user->fresh(),
+                'access' => $access->fresh([
+                    'company:company_id,trade_name,legal_name',
+                    'role:role_id,name,code',
+                    'branch:branch_id,name',
+                ]),
+                'invitation' => $invitation->fresh(),
+            ];
+        });
+    }
+
+    public function cancel(int $invitationId, User $actor): UserInvitation
+    {
+        $invitation = UserInvitation::query()
+            ->where('invitation_id', $invitationId)
+            ->first();
+
+        if (! $invitation) {
+            throw new NotFoundHttpException('Invitación no encontrada.');
+        }
+
+        $this->ensureActorHasCompanyAccess($invitation->company_id, $actor);
+
+        if ($invitation->status === 'ACCEPTED') {
+            throw new ConflictHttpException('No puedes cancelar una invitación ya aceptada.');
+        }
+
+        if ($invitation->status === 'CANCELLED') {
+            throw new ConflictHttpException('La invitación ya fue cancelada.');
+        }
+
+        $invitation->update([
+            'status' => 'CANCELLED',
+            'cancelled_at' => now(),
+        ]);
+
+        return $invitation->fresh([
+            'company:company_id,trade_name,legal_name',
+            'role:role_id,name,code',
+            'branch:branch_id,name',
+            'invitedBy:user_id,first_name,last_name,email',
+        ]);
+    }
+
 }

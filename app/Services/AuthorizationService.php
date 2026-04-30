@@ -35,7 +35,7 @@ class AuthorizationService
     public function getUserPermissionsInCompany(User $user, int $companyId): Collection
     {
         return $this->getUserRolesInCompany($user, $companyId)
-            ->flatMap(fn ($role) => $role->permissions ?? collect())
+            ->flatMap(fn($role) => $role->permissions ?? collect())
             ->filter()
             ->unique('permission_id')
             ->values();
@@ -44,5 +44,11 @@ class AuthorizationService
     public function userHasCompanyAccess(User $user, int $companyId): bool
     {
         return $this->getUserCompanyAccess($user, $companyId) !== null;
+    }
+
+    public function userHasPermission(User $user, int $companyId, string $permissionCode): bool
+    {
+        return $this->getUserPermissionsInCompany($user, $companyId)
+            ->contains(fn($permission) => $permission->code === $permissionCode);
     }
 }
