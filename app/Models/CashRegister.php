@@ -26,6 +26,11 @@ class CashRegister extends Model
         'status',
         'created_by_user_id',
         'updated_by_user_id',
+        'min_cash_balance',
+    ];
+
+    protected $casts = [
+        'min_cash_balance' => 'decimal:2',
     ];
 
     public function company(): BelongsTo

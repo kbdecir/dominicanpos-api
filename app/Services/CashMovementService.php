@@ -59,12 +59,25 @@ class CashMovementService
 
             $expectedAmount = (float) $shift->expected_cash_amount;
 
-            if ($type === 'EXPENSE') {
+            /* if ($type === 'EXPENSE') {
                 $newExpected = $expectedAmount - $amount;
 
                 if ($newExpected < 0) {
                     throw ValidationException::withMessages([
                         'amount' => 'No se puede registrar una salida que deje el efectivo esperado en negativo.',
+                    ]);
+                }
+            } else {
+                $newExpected = $expectedAmount + $amount;
+            } */
+            $minCashBalance = (float) $shift->cashRegister()->value('min_cash_balance');
+
+            if ($type === 'EXPENSE') {
+                $newExpected = $expectedAmount - $amount;
+
+                if ($newExpected < $minCashBalance) {
+                    throw ValidationException::withMessages([
+                        'amount' => "No se puede registrar una salida que deje el efectivo esperado por debajo del mínimo permitido ({$minCashBalance}).",
                     ]);
                 }
             } else {

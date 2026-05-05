@@ -10,10 +10,46 @@ use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\PermissionController;
 use App\Http\Controllers\Api\V1\CashShiftController;
 use App\Http\Controllers\Api\V1\CashRegisterController;
+use App\Http\Controllers\Api\V1\SaleController;
+use App\Http\Controllers\Api\V1\InventoryBalanceController;
+use App\Http\Controllers\Api\V1\StockMovementController;
+use App\Http\Controllers\Api\V1\CustomerController;
 
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+
+    Route::prefix('companies/{companyId}/customers')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])
+            ->middleware('permission:customers.view');
+
+        Route::post('/', [CustomerController::class, 'store'])
+            ->middleware('permission:customers.create');
+
+        Route::get('/tax-id/lookup', [CustomerController::class, 'findByTaxId'])
+            ->middleware('permission:customers.view');
+
+        Route::get('/{customerId}', [CustomerController::class, 'show'])
+            ->middleware('permission:customers.view');
+
+        Route::put('/{customerId}', [CustomerController::class, 'update'])
+            ->middleware('permission:customers.update');
+    });
+
+    Route::get(
+        'companies/{companyId}/branches/{branchId}/inventory/movements',
+        [StockMovementController::class, 'index']
+    )->middleware('permission:inventory.movements.view');
+
+    Route::get(
+        'companies/{companyId}/branches/{branchId}/inventory/balances',
+        [InventoryBalanceController::class, 'index']
+    )->middleware('permission:inventory.view');
+
+    Route::post(
+        'companies/{companyId}/branches/{branchId}/sales',
+        [SaleController::class, 'store']
+    )->middleware('permission:sales.create');
 
     Route::get(
         'companies/{companyId}/branches/{branchId}/cash-registers/active',

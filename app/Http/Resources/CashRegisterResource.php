@@ -16,7 +16,7 @@ class CashRegisterResource extends JsonResource
             'code' => $this->code,
             'name' => $this->name,
             'status' => $this->status,
-
+            'min_cash_balance' => $this->min_cash_balance,
             'open_shift' => CashShiftResource::make($this->whenLoaded('openShift')),
         ];
     }

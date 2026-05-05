@@ -6,8 +6,29 @@ use App\Models\CashShift;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+
 class CashShiftService
 {
+    public function getOpenShiftOrFail(
+        int $companyId,
+        int $branchId,
+        int $cashierUserId
+    ): CashShift {
+        $shift = CashShift::query()
+            ->forCompany($companyId)
+            ->forBranch($branchId)
+            ->where('cashier_user_id', $cashierUserId)
+            ->open()
+            ->first();
+
+        if (! $shift) {
+            throw ValidationException::withMessages([
+                'cash_shift_id' => 'No se puede vender sin un turno de caja abierto.',
+            ]);
+        }
+
+        return $shift;
+    }
     public function findForBranch(
         int $cashShiftId,
         int $companyId,
