@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
 
 class StoreSaleRequest extends FormRequest
 {
@@ -36,6 +38,7 @@ class StoreSaleRequest extends FormRequest
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'payments.*.reference_no' => ['nullable', 'string', 'max:100'],
             'fiscal_document_type_id' => [
+                Rule::requiredIf(fn() => $this->input('sale_type') === 'INVOICE'),
                 'nullable',
                 'integer',
                 'exists:fiscal_document_types,fiscal_document_type_id',

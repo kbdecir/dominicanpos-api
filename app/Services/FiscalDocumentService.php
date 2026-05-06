@@ -66,7 +66,25 @@ class FiscalDocumentService
                 ]);
             }
 
+            /*
+|--------------------------------------------------------------------------
+| Validaciones adicionales de secuencia
+|--------------------------------------------------------------------------
+*/
+
+            if ($sequence->valid_until && now()->toDateString() > $sequence->valid_until->toDateString()) {
+                throw ValidationException::withMessages([
+                    'ncf' => 'La secuencia NCF está vencida.',
+                ]);
+            }
+
             $ncf = $this->buildNcf($sequence);
+
+            if (strlen($ncf) !== strlen($sequence->prefix) + $sequence->sequence_length) {
+                throw ValidationException::withMessages([
+                    'ncf' => 'Error en la generación del NCF.',
+                ]);
+            }
 
             $sale->update([
                 'fiscal_document_type_id' => $type->fiscal_document_type_id,
@@ -88,11 +106,21 @@ class FiscalDocumentService
         });
     }
 
-    private function buildNcf(NcfSequence $sequence): string
+    /* private function buildNcf(NcfSequence $sequence): string
     {
         return $sequence->prefix . str_pad(
             (string) $sequence->current_number,
             8,
+            '0',
+            STR_PAD_LEFT
+        );
+    } */
+
+    private function buildNcf(NcfSequence $sequence): string
+    {
+        return $sequence->prefix . str_pad(
+            (string) $sequence->current_number,
+            (int) $sequence->sequence_length,
             '0',
             STR_PAD_LEFT
         );

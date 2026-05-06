@@ -20,11 +20,17 @@ class NcfSequence extends Model
         'current_number',
         'valid_until',
         'status',
+        'sequence_length',
     ];
 
     protected $casts = [
         'valid_until' => 'date',
+        'sequence_length' => 'integer',
     ];
+
+    /*     protected $casts = [
+        'valid_until' => 'date',
+    ]; */
 
     public function fiscalDocumentType(): BelongsTo
     {
