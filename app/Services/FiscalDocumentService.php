@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\FiscalDocumentType;
 use App\Models\NcfSequence;
 use App\Models\Sale;
+use App\Models\CreditNote;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -124,5 +126,72 @@ class FiscalDocumentService
             '0',
             STR_PAD_LEFT
         );
+    }
+
+    public function assignFiscalDocumentToCreditNote(
+        CreditNote $creditNote,
+        int $fiscalDocumentTypeId
+    ): CreditNote {
+        return DB::transaction(function () use ($creditNote, $fiscalDocumentTypeId) {
+            $type = FiscalDocumentType::query()
+                ->active()
+                ->where('fiscal_document_type_id', $fiscalDocumentTypeId)
+                ->firstOrFail();
+
+            if (! in_array($type->code, ['04', '34'], true)) {
+                throw ValidationException::withMessages([
+                    'fiscal_document_type_id' => 'La nota de crédito debe usar comprobante fiscal tipo 04 o 34.',
+                ]);
+            }
+
+            $sequence = NcfSequence::query()
+                ->where('company_id', $creditNote->company_id)
+                ->where('fiscal_document_type_id', $type->fiscal_document_type_id)
+                ->active()
+                ->where(function ($query) {
+                    $query->whereNull('valid_until')
+                        ->orWhereDate('valid_until', '>=', now()->toDateString());
+                })
+                ->whereColumn('current_number', '<=', 'end_number')
+                ->lockForUpdate()
+                ->orderBy('ncf_sequence_id')
+                ->first();
+
+            if (! $sequence) {
+                throw ValidationException::withMessages([
+                    'fiscal_document_type_id' => 'No existe una secuencia NCF activa y disponible para notas de crédito.',
+                ]);
+            }
+
+            if ($sequence->valid_until && now()->toDateString() > $sequence->valid_until->toDateString()) {
+                throw ValidationException::withMessages([
+                    'ncf' => 'La secuencia NCF está vencida.',
+                ]);
+            }
+
+            $ncf = $this->buildNcf($sequence);
+
+            if (strlen($ncf) !== strlen($sequence->prefix) + (int) $sequence->sequence_length) {
+                throw ValidationException::withMessages([
+                    'ncf' => 'Error en la generación del NCF.',
+                ]);
+            }
+
+            $creditNote->update([
+                'fiscal_document_type_id' => $type->fiscal_document_type_id,
+                'ncf_sequence_id' => $sequence->ncf_sequence_id,
+                'ncf' => $ncf,
+            ]);
+
+            $sequence->current_number = $sequence->current_number + 1;
+
+            if ($sequence->current_number > $sequence->end_number) {
+                $sequence->status = 'EXHAUSTED';
+            }
+
+            $sequence->save();
+
+            return $creditNote->fresh();
+        });
     }
 }

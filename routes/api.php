@@ -14,10 +14,16 @@ use App\Http\Controllers\Api\V1\SaleController;
 use App\Http\Controllers\Api\V1\InventoryBalanceController;
 use App\Http\Controllers\Api\V1\StockMovementController;
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CreditNoteController;
 
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+
+    Route::post(
+        'companies/{companyId}/branches/{branchId}/credit-notes',
+        [CreditNoteController::class, 'store']
+    )->middleware('permission:credit_notes.create');
 
     Route::prefix('companies/{companyId}/customers')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])
